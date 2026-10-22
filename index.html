@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Smart Categorized Inbox</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: #121921;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .phone-frame {
+            width: 100%;
+            max-width: 380px;
+            height: 700px;
+            background: #181818;
+            border-radius: 28px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 5px solid #282828;
+            position: relative;
+            transition: background 0.3s;
+        }
+
+        .phone-frame.light {
+            background: #ffffff;
+            color: #111827;
+            border-color: #e5e7eb;
+        }
+
+        /* Header */
+        .header {
+            padding: 12px 16px 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #181818;
+        }
+        .phone-frame.light .header { background: #ffffff; }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #5288c1;
+        }
+        .header-title {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: #ffc107;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* Search Bar */
+        .search-container {
+            padding: 4px 16px 8px 16px;
+            background: #181818;
+        }
+        .phone-frame.light .search-container { background: #ffffff; }
+
+        .search-box {
+            background: #262626;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            padding: 8px 14px;
+            gap: 8px;
+        }
+        .phone-frame.light .search-box { background: #f1f5f9; }
+
+        .search-box input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: inherit;
+            font-size: 13px;
+            width: 100%;
+        }
+
+        /* Category Tabs (Pills) */
+        .tabs-container {
+            display: flex;
+            gap: 6px;
+            padding: 8px 12px;
+            background: #181818;
+            overflow-x: auto;
+            scrollbar-width: none;
+            border-bottom: 1px solid #222222;
+        }
+        .tabs-container::-webkit-scrollbar { display: none; }
+        .phone-frame.light .tabs-container {
+            background: #ffffff;
+            border-bottom-color: #f3f4f6;
+        }
+
+        .tab-btn {
+            background: #262626;
+            color: #d1d5db;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+        .phone-frame.light .tab-btn {
+            background: #e2e8f0;
+            color: #374151;
+        }
+
+        .tab-btn.active {
+            background: #5288c1 !important;
+            color: #ffffff !important;
+        }
+
+        .badge {
+            background: #4fae4e;
+            color: white;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        .tab-btn.active .badge {
+            background: #ffffff;
+            color: #5288c1;
+        }
+
+        /* Chat List Feed */
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 100px;
+        }
+
+        .chat-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            gap: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .chat-item:active { background: #202020; }
+        .phone-frame.light .chat-item:active { background: #f9fafb; }
+
+        .avatar-wrap {
+            position: relative;
+            flex-shrink: 0;
+        }
+        .chat-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .online-dot {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 12px;
+            height: 12px;
+            background: #4fae4e;
+            border-radius: 50%;
+            border: 2px solid #181818;
+        }
+
+        .chat-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .chat-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .chat-name {
+            font-size: 15px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chat-time {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        .chat-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-msg {
+            font-size: 13px;
+            color: #9ca3af;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 190px;
+        }
+
+        .unread-pill {
+            background: #4fae4e;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 2px 7px;
+            border-radius: 10px;
+        }
+
+        /* Floating Action Plus Button */
+        .fab-btn {
+            position: absolute;
+            bottom: 85px;
+            right: 20px;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: #5288c1;
+            color: white;
+            border: none;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            cursor: pointer;
+            z-index: 20;
+        }
+
+        /* Floating Capsule Bottom Nav */
+        .bottom-capsule-wrapper {
+            position: absolute;
+            bottom: 16px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            padding: 0 16px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .bottom-capsule {
+            pointer-events: auto;
+            width: 100%;
+            max-width: 320px;
+            height: 52px;
+            background: rgba(33, 33, 33, 0.92);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            border: 1px solid #333333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+        .phone-frame.light .bottom-capsule {
+            background: rgba(255, 255, 255, 0.92);
+            border-color: #e5e7eb;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .capsule-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: #9ca3af;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .capsule-item.active {
+            background: #2b394a;
+            color: #5288c1;
+        }
+        .phone-frame.light .capsule-item.active {
+            background: #e0eaf5;
+            color: #5288c1;
+        }
+
+        .mini-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="phone-frame" id="phoneFrame">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" class="user-avatar" alt="Profile">
+                <div class="header-title">Telegram</div>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-container">
+            <div class="search-box">
+                <span style="color:#87909b;">🔍</span>
+                <input type="text" id="searchInput" placeholder="Search Chats" oninput="renderChats()">
+            </div>
+        </div>
+
+        <!-- Category Tabs -->
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="setTab('all', this)">All <span class="badge" id="b-all">0</span></button>
+            <button class="tab-btn" onclick="setTab('personal', this)">👤 Personal <span class="badge" id="b-personal">0</span></button>
+            <button class="tab-btn" onclick="setTab('groups', this)">👥 Groups <span class="badge" id="b-groups">0</span></button>
+            <button class="tab-btn" onclick="setTab('channels', this)">📢 Channels <span class="badge" id="b-channels">0</span></button>
+            <button class="tab-btn" onclick="setTab('bots', this)">🤖 Bots <span class="badge" id="b-bots">0</span></button>
+        </div>
+
+        <!-- Chat List Feed -->
+        <div class="chat-list" id="chatList"></div>
+
+        <!-- Floating Plus Action Button -->
+        <button class="fab-btn">+</button>
+
+        <!-- Floating Capsule Navigation Bar -->
+        <div class="bottom-capsule-wrapper">
+            <div class="bottom-capsule">
+                <div class="capsule-item active">
+                    💬 <span>Chats</span>
+                </div>
+                <div class="capsule-item">👥</div>
+                <div class="capsule-item">⚙️</div>
+                <div class="capsule-item">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60" class="mini-avatar" alt="Avatar">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chats = [
+            { id: 1, type: 'channels', name: '1 1 Movies @ProSearch', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100', msg: 'Baby.Driver.2017.1080p.mkv [2.1 GB]', time: 'Sat', unread: 42 },
+            { id: 2, type: 'channels', name: 'VVIP MOVIE NEXUS', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100', msg: 'Foursome 2023 1080p Tagalog.mp4', time: 'Mon', unread: 0 },
+            { id: 3, type: 'personal', name: 'Alex Johnson', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100', msg: 'Are we still meeting at 9:00 AM?', time: '08:45 AM', unread: 2, online: true },
+            { id: 4, type: 'groups', name: 'Global Tech Developers', avatar: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=100', msg: 'David: Anyone deploying React Mini Apps?', time: '07:30 AM', unread: 15 },
+            { id: 5, type: 'bots', name: 'AI Image Generator Bot', avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100', msg: 'Your rendered concept is ready! Tap below.', time: 'Yesterday', unread: 1 },
+            { id: 6, type: 'personal', name: 'Sarah Miller', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100', msg: 'Thanks a lot! I received the files.', time: 'Yesterday', unread: 0 },
+            { id: 7, type: 'channels', name: 'TVSeries @ProSearch', avatar: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=100', msg: 'Beauty in Black S03E08.mkv', time: 'Oct 02', unread: 180 },
+            { id: 8, type: 'bots', name: 'Telegram Wallet', avatar: 'https://images.unsplash.com/photo-1622979135225-d2ba269bc1df?w=100', msg: 'You received 5.0 TON from @alex_trade', time: 'Sep 29', unread: 0 },
+            { id: 9, type: 'groups', name: 'Bank Official Group', avatar: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=100', msg: 'Support: Maintenance scheduled for midnight.', time: '6:23 AM', unread: 0 }
+        ];
+
+        let activeTab = 'all';
+
+        function updateBadges() {
+            const types = ['all', 'personal', 'groups', 'channels', 'bots'];
+            types.forEach(t => {
+                const count = chats
+                    .filter(c => t === 'all' || c.type === t)
+                    .reduce((sum, c) => sum + c.unread, 0);
+                document.getElementById(`b-${t}`).textContent = count;
+            });
+        }
+
+        function setTab(type, el) {
+            activeTab = type;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            renderChats();
+        }
+
+        function renderChats() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const list = document.getElementById('chatList');
+            list.innerHTML = '';
+
+            const filtered = chats.filter(c => {
+                const matchTab = activeTab === 'all' || c.type === activeTab;
+                const matchSearch = c.name.toLowerCase().includes(query) || c.msg.toLowerCase().includes(query);
+                return matchTab && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<div style="text-align:center; padding: 40px; color: #6b7280; font-size: 13px;">No chats found in this tab.</div>`;
+                return;
+            }
+
+            filtered.forEach(c => {
+                const item = document.createElement('div');
+                item.className = 'chat-item';
+                item.innerHTML = `
+                    <div class="avatar-wrap">
+                        <img src="${c.avatar}" class="chat-avatar" alt="${c.name}">
+                        ${c.online ? '<div class="online-dot"></div>' : ''}
+                    </div>
+                    <div class="chat-info">
+                        <div class="chat-top">
+                            <div class="chat-name">${c.name}</div>
+                            <div class="chat-time">${c.time}</div>
+                        </div>
+                        <div class="chat-bottom">
+                            <div class="chat-msg">${c.msg}</div>
+                            ${c.unread > 0 ? `<div class="unread-pill">${c.unread}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function toggleTheme() {
+            const frame = document.getElementById('phoneFrame');
+            const btn = document.getElementById('themeBtn');
+            frame.classList.toggle('light');
+            btn.textContent = frame.classList.contains('light') ? '🌙' : '☀️';
+        }
+
+        updateBadges();
+        renderChats();
+    </script>
+</body>
+</html>
